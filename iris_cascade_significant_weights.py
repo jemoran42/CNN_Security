@@ -26,7 +26,7 @@ def convert_csv_to_arrays(filename, first_index, second_index, third_index, four
                 index.append(float(row[first_index]))
                 accuracy.append(float(row[second_index]))
                 v.append(abs(int(row[third_index][(row[third_index].find('=')+1):])))
-                u.append(abs(int(row[fourth_index][(row[fourth_index].find('=')+1):]))) 
+                u.append(abs(int(row[fourth_index][(row[fourth_index].find('=')+1):])))
 
     return index, accuracy, v, u
 
@@ -162,11 +162,14 @@ for reset_name, reset_type in zip(net._layer_names, net.layers):
 		new_net.params[reset_name][1].data[...] = net.params[reset_name][1].data[...]
 
 
+cascaded_file = open('cascade.txt', "a")
 desired = False
+iter = 0
 
 # CASCADE CHANGES
-for x,y in zip(sorted_v,sorted_u):
-	new_net.params[last_layer_name][0].data[x][y] = new_net.params[last_layer_name][0].data[x][y]*change_amount
+for x,y,brute_acc in zip(sorted_v,sorted_u,sorted_accuracy):
+    iter = iter + 1
+    new_net.params[last_layer_name][0].data[x][y] = new_net.params[last_layer_name][0].data[x][y]*change_amount
 	new_net.save(modified_weights)
 
 	os.system("caffe test --model=" + prototxt + " --weights=modified_weights.caffemodel --gpu=0 2>&1 | tee log.txt")
@@ -178,23 +181,24 @@ for x,y in zip(sorted_v,sorted_u):
 			start = line.find(' = ')
 			end = line.find('\n')
 			current_accuracy = float(line[start+3:end])
+    log.close()
+    cascade_file.write(str(iter) + ',x=' + str(x) + ',y=' + str(y) + ',brute_accuracy=' + str(brute_acc) + ',cascade_accuracy=' + str(current_accuracy) + '\n')
 
-	if current_accuracy <= desired_accuracy:
+    if current_accuracy <= desired_accuracy:
 		desired = True
 		break
 
+cascade_file.close()
+
 if desired:
-	print 'Desired accuracy found. File saved as ' + modified_weights
+	print 'Desired accuracy found after ' + str(iter) + ' iterations. File saved as ' + modified_weights
 
 else:
 	print 'Desired accuracy could not be acheived. Try smaller accuracy drop.'
 
 ###############################################################
 
-
-# number of iterations, weight index x, weight index y, accuracy for individual weight, accuracy from accumulation
-
-# GoogleNet 
+# GoogleNet
 # 8 class based datasets (hdf5)
 # 8 class based plots (brute force)
 # 1 class based cascade to prove killing one class in network
