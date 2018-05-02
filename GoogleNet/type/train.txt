@@ -1,0 +1,3 @@
+/local/tmp/jem_googlenet/type/train1.h5
+/local/tmp/jem_googlenet/type/train2.h5
+/local/tmp/jem_googlenet/type/train3.h5
